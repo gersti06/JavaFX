@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.demo.HelloController">
+    <top>
+        <VBox spacing="10" alignment="CENTER">
+            <padding>
+                <Insets top="20" right="20" bottom="10" left="20"/>
+            </padding>
+            <Label text="Memory Game" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+        </VBox>
+    </top>
+    
+    <center>
+        <VBox spacing="10" alignment="CENTER">
+            <padding>
+                <Insets top="10" right="20" bottom="10" left="20"/>
+            </padding>
+            
+            <HBox spacing="10" alignment="CENTER">
+                <Label fx:id="currentPlayerLabel" text="Current Player: Player 1" style="-fx-font-weight: bold;"/>
+                <Label fx:id="triesLabel" text="Tries: 0" />
+                <Label fx:id="matchedPairsLabel" text="Matched Pairs: 0/8" />
+            </HBox>
+            
+            <ListView fx:id="cardListView" prefHeight="300" prefWidth="500">
+                <VBox.margin>
+                    <Insets top="10"/>
+                </VBox.margin>
+            </ListView>
+            
+            <HBox spacing="10" alignment="CENTER">
+                <Button fx:id="newGameButton" text="New Game" onAction="#newGame"/>
+            </HBox>
+        </VBox>
+    </center>
+    
+    <right>
+        <VBox spacing="10" alignment="CENTER">
+            <padding>
+                <Insets top="10" right="20" bottom="10" left="10"/>
+            </padding>
+            
+            <Label text="Players" style="-fx-font-weight: bold;"/>
+            <ListView fx:id="playersListView" prefHeight="200" prefWidth="200"/>
+            
+            <HBox spacing="5" alignment="CENTER">
+                <TextField fx:id="playerNameField" promptText="New player name" prefWidth="140"/>
+                <Button fx:id="addPlayerButton" text="Add" onAction="#addPlayer"/>
+            </HBox>
+        </VBox>
+    </right>
+    
+    <bottom>
+        <HBox alignment="CENTER" spacing="10">
+            <padding>
+                <Insets top="10" right="20" bottom="20" left="20"/>
+            </padding>
+            <Label fx:id="welcomeText"/>
+        </HBox>
+    </bottom>
+</BorderPane>
