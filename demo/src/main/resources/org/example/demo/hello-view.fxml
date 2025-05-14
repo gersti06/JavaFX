@@ -42,7 +42,9 @@
             <ListView fx:id="cardListView" prefWidth="400" prefHeight="600" style="-fx-background-color: white; -fx-control-inner-background: white;" />
             
             <HBox spacing="10" alignment="CENTER">
-                <Button fx:id="newGameButton" text="New Game" onAction="#newGame"/>
+                <Label text="Pairs:" />
+                <ComboBox fx:id="pairsComboBox" prefWidth="60" />
+                <Button fx:id="newGameButton" text="New Game" onAction="#newGame" />
             </HBox>
         </VBox>
     </center>

@@ -13,11 +13,15 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Pos;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.animation.RotateTransition;
+import javafx.scene.transform.Rotate;
+import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -63,6 +67,9 @@ public class HelloController implements Initializable {
     @FXML
     private Label timerLabel;
 
+    @FXML
+    private ComboBox<Integer> pairsComboBox;
+
     private MemoryGame game;
     private DatabaseService dbService;
 
@@ -81,6 +88,9 @@ public class HelloController implements Initializable {
         setupPlayerListView();
         loadPlayersFromDatabase();
         addKeyEventHandlers();
+        // initialize pairs selection
+        pairsComboBox.getItems().addAll(2, 4, 6, 8);
+        pairsComboBox.setValue(8);
     }
 
     private void setupBindings() {
@@ -122,12 +132,23 @@ public class HelloController implements Initializable {
 
     private void setupCardListView() {
         cardListView.setItems(game.getCards());
-        cardListView.setCellFactory(lv -> new ListCell<>() {
-            private final ImageView imageView = new ImageView();
+        cardListView.setCellFactory(lv -> new ListCell<Card>() {
+            private final StackPane pane = new StackPane();
+            private final ImageView frontImageView = new ImageView();
+            private final ImageView backImageView = new ImageView(
+                new Image(getClass().getResourceAsStream("/images/backside.png"))
+            );
 
             {
-                imageView.setFitWidth(80);
-                imageView.setFitHeight(80);
+                pane.getChildren().addAll(backImageView, frontImageView);
+                pane.setPrefSize(80, 80);
+                pane.setAlignment(Pos.CENTER);
+                frontImageView.setFitWidth(80);
+                frontImageView.setFitHeight(80);
+                backImageView.setFitWidth(80);
+                backImageView.setFitHeight(80);
+                pane.setRotationAxis(Rotate.Y_AXIS);
+                pane.setStyle("-fx-border-color: lightgray; -fx-background-color: white; -fx-border-radius: 5;");
             }
 
             @Override
@@ -135,31 +156,41 @@ public class HelloController implements Initializable {
                 super.updateItem(card, empty);
                 if (empty || card == null) {
                     setGraphic(null);
-                    setText(null);
-                } else {
-                    Image image;
-                    if (card.isFlipped() || card.isMatched()) {
-                        String path = "/images/" + card.getValue() + ".png";
-                        image = new Image(getClass().getResourceAsStream(path));
-                    } else {
-                        image = new Image(getClass().getResourceAsStream("/images/backside.png"));
-                    }
-
-                    imageView.setImage(image);
-                    setGraphic(imageView);
-                    setText(null);
-                    setStyle("-fx-alignment: center; -fx-padding: 10px;");
-
-                    setOnMouseClicked(e -> {
-                        getListView().getSelectionModel().select(getIndex());
-                        handleCardClick(getIndex());
-                    });
+                    return;
                 }
+                String value = card.getValue().toLowerCase();
+                Image frontImage = new Image(
+                    getClass().getResourceAsStream("/images/" + value + ".png")
+                );
+                frontImageView.setImage(frontImage);
+
+                boolean showFront = card.isFlipped() || card.isMatched();
+                frontImageView.setVisible(showFront);
+                backImageView.setVisible(!showFront);
+                setGraphic(pane);
+
+                card.flippedProperty().addListener((obs, oldVal, newVal) -> 
+                    performFlipAnimation(pane, frontImageView, backImageView, newVal)
+                );
+                setOnMouseClicked(e -> handleCardClick(getIndex()));
+            }
+
+            private void performFlipAnimation(StackPane pane, ImageView front, ImageView back, boolean flipped) {
+                RotateTransition firstHalf = new RotateTransition(Duration.millis(150), pane);
+                firstHalf.setFromAngle(0);
+                firstHalf.setToAngle(90);
+                RotateTransition secondHalf = new RotateTransition(Duration.millis(150), pane);
+                secondHalf.setFromAngle(90);
+                secondHalf.setToAngle(0);
+                firstHalf.setOnFinished(evt -> {
+                    front.setVisible(flipped);
+                    back.setVisible(!flipped);
+                    secondHalf.play();
+                });
+                firstHalf.play();
             }
         });
     }
-
-
 
     private void attachGameListeners() {
         game.getCards().addListener((javafx.collections.ListChangeListener<Card>) change -> setupCardListView());
@@ -219,7 +250,8 @@ public class HelloController implements Initializable {
             flipBackTimer.cancel();
             flipBackTimer = null;
         }
-        game.initializeCards(8);
+        int pairs = pairsComboBox.getValue() != null ? pairsComboBox.getValue() : 8;
+        game.initializeCards(pairs);
         setupCardListView();
         // reset timer
         if (elapsedTime != null) elapsedTime.set(0);
