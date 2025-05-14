@@ -6,11 +6,22 @@
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.demo.HelloController">
     <top>
-        <VBox spacing="10" alignment="CENTER">
-            <padding>
-                <Insets top="20" right="20" bottom="10" left="20"/>
-            </padding>
-            <Label text="Memory Game" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+        <VBox spacing="5">
+            <MenuBar>
+                <Menu text="File">
+                    <MenuItem text="New Game" onAction="#newGame"/>
+                    <MenuItem text="Exit" onAction="#exitGame"/>
+                </Menu>
+                <Menu text="Help">
+                    <MenuItem text="About" onAction="#showAbout"/>
+                </Menu>
+            </MenuBar>
+            <VBox spacing="10" alignment="CENTER">
+                <padding>
+                    <Insets top="20" right="20" bottom="10" left="20"/>
+                </padding>
+                <Label text="Memory Game" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+            </VBox>
         </VBox>
     </top>
     
@@ -25,6 +36,8 @@
                 <Label fx:id="triesLabel" text="Tries: 0" />
                 <Label fx:id="matchedPairsLabel" text="Matched Pairs: 0/8" />
             </HBox>
+            
+            <Label fx:id="timerLabel" text="Time: 0s" styleClass="timer-label"/>
             
             <ListView fx:id="cardListView" prefWidth="400" prefHeight="600" style="-fx-background-color: white; -fx-control-inner-background: white;" />
             

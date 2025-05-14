@@ -14,6 +14,11 @@ import javafx.scene.control.Button;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Pos;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import org.example.demo.model.Card;
 import org.example.demo.model.DatabaseService;
 import org.example.demo.model.MemoryGame;
@@ -53,16 +58,22 @@ public class HelloController implements Initializable {
     @FXML
     private Button newGameButton;
 
+    @FXML
+    private Label timerLabel;
+
     private MemoryGame game;
     private DatabaseService dbService;
 
     private Timer flipBackTimer;
+    private Timeline timer;
+    private IntegerProperty elapsedTime;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         game = new MemoryGame();
         dbService = new DatabaseService();
         setupBindings();
+        setupTimer();
         setupCardListView();
         attachGameListeners();
         setupPlayerListView();
@@ -96,6 +107,15 @@ public class HelloController implements Initializable {
                 savePlayersToDatabase();
             }
         });
+    }
+
+    private void setupTimer() {
+        elapsedTime = new SimpleIntegerProperty(0);
+        // Bind timer label to elapsed seconds
+        timerLabel.textProperty().bind(elapsedTime.asString("Time: %ds"));
+        timer = new Timeline(new KeyFrame(Duration.seconds(1), e -> elapsedTime.set(elapsedTime.get() + 1)));
+        timer.setCycleCount(Timeline.INDEFINITE);
+        timer.play();
     }
 
     private void setupCardListView() {
@@ -188,6 +208,22 @@ public class HelloController implements Initializable {
         }
         game.initializeCards(8);
         setupCardListView();
+        // reset timer
+        if (elapsedTime != null) elapsedTime.set(0);
+    }
+
+    @FXML
+    protected void exitGame() {
+        Platform.exit();
+    }
+
+    @FXML
+    protected void showAbout() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("About");
+        alert.setHeaderText("Memory Game");
+        alert.setContentText("Ein einfaches Memory-Spiel in JavaFX.");
+        alert.showAndWait();
     }
 
     private void handleCardClick(int index) {
