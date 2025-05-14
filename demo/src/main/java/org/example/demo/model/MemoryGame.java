@@ -45,14 +45,23 @@ public class MemoryGame {
         secondCardIndex = -1;
         waitingForFlipBack = false;
     }
-    
+
     private List<String> generateCardValues(int pairs) {
         // Simple implementation: using letters as card values
         List<String> values = new ArrayList<>();
+        String[] fruits = {
+                "apple",
+                "banana",
+                "cherry",
+                "grape",
+                "kiwi",
+                "lemon",
+                "orange",
+                "strawberry"
+        };
         for (int i = 0; i < pairs; i++) {
-            char c = (char) ('A' + i);
-            values.add(Character.toString(c));
-            values.add(Character.toString(c));
+            values.add(fruits[i]);
+            values.add(fruits[i]);
         }
         
         // Shuffle the cards

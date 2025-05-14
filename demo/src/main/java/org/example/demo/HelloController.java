@@ -6,6 +6,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ListCell;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.control.Label;
@@ -120,25 +122,34 @@ public class HelloController implements Initializable {
 
     private void setupCardListView() {
         cardListView.setItems(game.getCards());
-        cardListView.setCellFactory(lv -> new ListCell<Card>() {
+        cardListView.setCellFactory(lv -> new ListCell<>() {
+            private final ImageView imageView = new ImageView();
+
+            {
+                imageView.setFitWidth(80);
+                imageView.setFitHeight(80);
+            }
+
             @Override
             protected void updateItem(Card card, boolean empty) {
                 super.updateItem(card, empty);
                 if (empty || card == null) {
-                    setText(null);
                     setGraphic(null);
-                    setStyle("");
+                    setText(null);
                 } else {
-                    setText(card.toString());
-                    boolean selected = getListView().getSelectionModel().isSelected(getIndex());
-                    String style;
-                    if (selected) {
-                        // Highlight selection
-                        style = "-fx-background-color: lightblue; -fx-text-fill: black;";
+                    Image image;
+                    if (card.isFlipped() || card.isMatched()) {
+                        String path = "/images/" + card.getValue() + ".png";
+                        image = new Image(getClass().getResourceAsStream(path));
                     } else {
-                        style = "-fx-background-color: white; -fx-text-fill: black; -fx-border-color: lightgray;";
+                        image = new Image(getClass().getResourceAsStream("/images/backside.png"));
                     }
-                    setStyle(style);
+
+                    imageView.setImage(image);
+                    setGraphic(imageView);
+                    setText(null);
+                    setStyle("-fx-alignment: center; -fx-padding: 10px;");
+
                     setOnMouseClicked(e -> {
                         getListView().getSelectionModel().select(getIndex());
                         handleCardClick(getIndex());
@@ -147,6 +158,8 @@ public class HelloController implements Initializable {
             }
         });
     }
+
+
 
     private void attachGameListeners() {
         game.getCards().addListener((javafx.collections.ListChangeListener<Card>) change -> setupCardListView());
