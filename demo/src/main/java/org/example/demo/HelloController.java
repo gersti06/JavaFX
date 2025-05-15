@@ -25,6 +25,7 @@ import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.util.converter.NumberStringConverter;
 import org.example.demo.model.Card;
 import org.example.demo.model.DatabaseService;
 import org.example.demo.model.MemoryGame;
@@ -59,6 +60,9 @@ public class HelloController implements Initializable {
     private TextField playerNameField;
 
     @FXML
+    private TextField playerScoreField;
+
+    @FXML
     private Button addPlayerButton;
 
     @FXML
@@ -86,6 +90,19 @@ public class HelloController implements Initializable {
         setupCardListView();
         attachGameListeners();
         setupPlayerListView();
+        // Bidirektionales Binding für Score-Edit-Feld
+        playersListView.getSelectionModel().selectedItemProperty().addListener((obs, oldPlayer, newPlayer) -> {
+            if (oldPlayer != null) {
+                Bindings.unbindBidirectional(playerScoreField.textProperty(), oldPlayer.scoreProperty());
+            }
+            if (newPlayer != null) {
+                playerScoreField.setDisable(false);
+                Bindings.bindBidirectional(playerScoreField.textProperty(), newPlayer.scoreProperty(), new NumberStringConverter());
+            } else {
+                playerScoreField.clear();
+                playerScoreField.setDisable(true);
+            }
+        });
         loadPlayersFromDatabase();
         addKeyEventHandlers();
         // initialize pairs selection

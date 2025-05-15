@@ -64,6 +64,10 @@
                 <Button fx:id="removePlayerButton" text="Delete Player" onAction="#removePlayer"/>
             </HBox>
             <Button fx:id="resetScoresButton" text="Reset Scores" onAction="#resetScores" />
+            <HBox spacing="5" alignment="CENTER">
+                <Label text="Edit Score:"/>
+                <TextField fx:id="playerScoreField" promptText="Score" prefWidth="60" disable="true"/>
+            </HBox>
         </VBox>
     </right>
     
