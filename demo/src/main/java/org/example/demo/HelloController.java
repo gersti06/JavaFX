@@ -300,7 +300,12 @@ public class HelloController implements Initializable {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("About");
         alert.setHeaderText("Memory Game");
-        alert.setContentText("Ein einfaches Memory-Spiel in JavaFX.");
+        alert.setContentText("Ein einfaches Memory-Spiel in JavaFX. \nDas Memory-Spiel funktioniert so:\n" +
+            "\n" +
+            "1. **Spiel starten**: Klicke auf \"New Game\", um ein neues Spiel zu beginnen.\n" +
+            "2. **Karten aufdecken**: Klicke auf zwei Karten, um sie aufzudecken.\n" +
+            "3. **Paare finden**: Wenn die Karten übereinstimmen, bleiben sie aufgedeckt. Andernfalls werden sie wieder umgedreht.\n" +
+            "4. **Spielziel**: Finde alle Paare, um das Spiel zu gewinnen.");
         alert.showAndWait();
     }
 
