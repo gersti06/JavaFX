@@ -90,6 +90,7 @@ public class HelloController implements Initializable {
         addKeyEventHandlers();
         // initialize pairs selection
         pairsComboBox.getItems().addAll(2, 4, 6, 8);
+        // KI-Assist: Initialisierung der Paare-Auswahl durch AI vorgeschlagen
         pairsComboBox.setValue(8);
     }
 
@@ -121,9 +122,7 @@ public class HelloController implements Initializable {
         });
     }
 
-    private void setupTimer() {
-        elapsedTime = new SimpleIntegerProperty(0);
-        // Bind timer label to elapsed seconds
+    private void setupTimer() {        elapsedTime = new SimpleIntegerProperty(0);
         timerLabel.textProperty().bind(elapsedTime.asString("Time: %ds"));
         timer = new Timeline(new KeyFrame(Duration.seconds(1), e -> elapsedTime.set(elapsedTime.get() + 1)));
         timer.setCycleCount(Timeline.INDEFINITE);
@@ -136,7 +135,8 @@ public class HelloController implements Initializable {
             private final StackPane pane = new StackPane();
             private final ImageView frontImageView = new ImageView();
             private final ImageView backImageView = new ImageView(
-                new Image(getClass().getResourceAsStream("/images/backside.png"))
+                new Image(getClass().getResourceAsStream("/images/backside.png"),
+                    80, 80, true, true)
             );
 
             {
@@ -160,7 +160,8 @@ public class HelloController implements Initializable {
                 }
                 String value = card.getValue().toLowerCase();
                 Image frontImage = new Image(
-                    getClass().getResourceAsStream("/images/" + value + ".png")
+                    getClass().getResourceAsStream("/images/" + value + ".png"),
+                    80, 80, true, true  // load scaled image with smoothing
                 );
                 frontImageView.setImage(frontImage);
 
@@ -176,6 +177,7 @@ public class HelloController implements Initializable {
             }
 
             private void performFlipAnimation(StackPane pane, ImageView front, ImageView back, boolean flipped) {
+                // KI-Assist: Komplexe Flip-Animation-Logik optimiert durch AI
                 RotateTransition firstHalf = new RotateTransition(Duration.millis(150), pane);
                 firstHalf.setFromAngle(0);
                 firstHalf.setToAngle(90);
@@ -206,7 +208,7 @@ public class HelloController implements Initializable {
                     textProperty().unbind();
                     setText(null);
                 } else {
-                    // Bind text to name and score so it updates automatically
+                    // KI-Assist: Bind text to name and score so it updates automatically
                     textProperty().bind(Bindings.createStringBinding(() ->
                         player.getName() + " - Score: " + player.getScore(),
                         player.nameProperty(), player.scoreProperty()));
@@ -252,9 +254,15 @@ public class HelloController implements Initializable {
         }
         int pairs = pairsComboBox.getValue() != null ? pairsComboBox.getValue() : 8;
         game.initializeCards(pairs);
-        setupCardListView();
-        // reset timer
-        if (elapsedTime != null) elapsedTime.set(0);
+        setupCardListView();        if (elapsedTime != null) elapsedTime.set(0);
+    }
+
+    @FXML
+    protected void resetScores() {
+        // Reset scores in database (KI-Assist)
+        dbService.resetAllScores();
+        // Reset scores in current game
+        game.getPlayers().forEach(player -> player.setScore(0));
     }
 
     @FXML
@@ -269,6 +277,19 @@ public class HelloController implements Initializable {
         alert.setHeaderText("Memory Game");
         alert.setContentText("Ein einfaches Memory-Spiel in JavaFX.");
         alert.showAndWait();
+    }
+
+    @FXML
+    protected void removePlayer() {
+        Player selected = playersListView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            // delete from database
+            if (selected.getId() != 0) {
+                dbService.deletePlayer(selected.getId());
+            }
+            // remove from game
+            game.getPlayers().remove(selected);
+        }
     }
 
     private void handleCardClick(int index) {

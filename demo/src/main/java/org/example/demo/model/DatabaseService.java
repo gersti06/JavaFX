@@ -26,6 +26,7 @@ public class DatabaseService {
 
     private void createTablesIfNotExist() {
         try (Statement stmt = connection.createStatement()) {
+            // KI-Assist: Automatisch generiertes Datenbankschema für Spielstand-Persistenz
             stmt.execute("CREATE TABLE IF NOT EXISTS players (" +
                     "id INT AUTO_INCREMENT PRIMARY KEY, " +
                     "name VARCHAR(255) NOT NULL, " +
@@ -82,6 +83,25 @@ public class DatabaseService {
             e.printStackTrace();
         }
         return players;
+    }
+
+    public void resetAllScores() {
+        String sql = "UPDATE players SET score = 0";
+        try (Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deletePlayer(int id) {
+        String sql = "DELETE FROM players WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void close() {

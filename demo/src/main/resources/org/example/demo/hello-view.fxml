@@ -61,7 +61,9 @@
             <HBox spacing="5" alignment="CENTER">
                 <TextField fx:id="playerNameField" promptText="New player name" prefWidth="140"/>
                 <Button fx:id="addPlayerButton" text="Add" onAction="#addPlayer"/>
+                <Button fx:id="removePlayerButton" text="Delete Player" onAction="#removePlayer"/>
             </HBox>
+            <Button fx:id="resetScoresButton" text="Reset Scores" onAction="#resetScores" />
         </VBox>
     </right>
     

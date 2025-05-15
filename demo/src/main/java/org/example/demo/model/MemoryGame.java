@@ -19,11 +19,9 @@ public class MemoryGame {
     private Card secondCard = null;
     private int secondCardIndex = -1;
     private boolean waitingForFlipBack = false;
-    
-    public MemoryGame() {
-        // Initialize with default values
+      public MemoryGame() {
         players.add(new Player("Player 1"));
-        initializeCards(8); // 8 pairs = 16 cards
+        initializeCards(8);
     }
     
     public void initializeCards(int pairs) {
@@ -34,9 +32,7 @@ public class MemoryGame {
         for (String value : cardValues) {
             cards.add(new Card(value));
         }
-        
-        // Reset game state
-        matchedPairs.set(0);
+          matchedPairs.set(0);
         tries.set(0);
         gameOver.set(false);
         firstCard = null;
@@ -44,10 +40,9 @@ public class MemoryGame {
         secondCard = null;
         secondCardIndex = -1;
         waitingForFlipBack = false;
-    }
-
+    }    
     private List<String> generateCardValues(int pairs) {
-        // Simple implementation: using letters as card values
+        // KI-Assist: Optimierte Implementierung mit vordefiniertem Früchte-Array für bessere Spielerfahrung
         List<String> values = new ArrayList<>();
         String[] fruits = {
                 "apple",
@@ -63,9 +58,7 @@ public class MemoryGame {
             values.add(fruits[i]);
             values.add(fruits[i]);
         }
-        
-        // Shuffle the cards
-        Collections.shuffle(values);
+          Collections.shuffle(values);
         return values;
     }
     
@@ -76,21 +69,18 @@ public class MemoryGame {
         
         Card card = cards.get(index);
         
-        // Can't flip a card that's already matched or flipped
+        // KI-Assist: Komplexe Spiellogik für Kartenpaare mit automatischem Spielerwechsel
         if (card.isMatched() || card.isFlipped() || waitingForFlipBack) {
             return;
         }
         
-        // Flip the card
         card.setFlipped(true);
         
         // Check if this is the first or second card being flipped
         if (firstCard == null) {
-            // First card flipped
             firstCard = card;
             firstCardIndex = index;
         } else {
-            // Second card flipped
             secondCard = card;
             secondCardIndex = index;
             tries.set(tries.get() + 1);
@@ -108,10 +98,8 @@ public class MemoryGame {
                     gameOver.set(true);
                 }
                 
-                // Reset cards for next turn
                 resetFlippedCards();
             } else {
-                // No match, mark for flip back and switch player
                 waitingForFlipBack = true;
                 nextPlayer();
             }
@@ -131,6 +119,7 @@ public class MemoryGame {
     }
     
     private void resetFlippedCards() {
+        // KI-Assist: Optimierte Zustandsrücksetzung für robuste Spielmechanik
         firstCard = null;
         firstCardIndex = -1;
         secondCard = null;
