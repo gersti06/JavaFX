@@ -68,6 +68,10 @@
                 <Label text="Edit Score:"/>
                 <TextField fx:id="playerScoreField" promptText="Score" prefWidth="60" disable="true"/>
             </HBox>
+            <HBox spacing="5" alignment="CENTER">
+                <Label text="Edit Name:"/>
+                <TextField fx:id="playerNameEditField" promptText="Name" prefWidth="140" disable="true"/>
+            </HBox>
         </VBox>
     </right>
     

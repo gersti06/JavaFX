@@ -74,6 +74,9 @@ public class HelloController implements Initializable {
     @FXML
     private ComboBox<Integer> pairsComboBox;
 
+    @FXML
+    private TextField playerNameEditField;
+
     private MemoryGame game;
     private DatabaseService dbService;
 
@@ -94,13 +97,18 @@ public class HelloController implements Initializable {
         playersListView.getSelectionModel().selectedItemProperty().addListener((obs, oldPlayer, newPlayer) -> {
             if (oldPlayer != null) {
                 Bindings.unbindBidirectional(playerScoreField.textProperty(), oldPlayer.scoreProperty());
+                Bindings.unbindBidirectional(playerNameEditField.textProperty(), oldPlayer.nameProperty());
             }
             if (newPlayer != null) {
                 playerScoreField.setDisable(false);
                 Bindings.bindBidirectional(playerScoreField.textProperty(), newPlayer.scoreProperty(), new NumberStringConverter());
+                playerNameEditField.setDisable(false);
+                Bindings.bindBidirectional(playerNameEditField.textProperty(), newPlayer.nameProperty());
             } else {
                 playerScoreField.clear();
                 playerScoreField.setDisable(true);
+                playerNameEditField.clear();
+                playerNameEditField.setDisable(true);
             }
         });
         loadPlayersFromDatabase();
