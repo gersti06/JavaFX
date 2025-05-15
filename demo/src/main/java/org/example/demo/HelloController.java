@@ -1,109 +1,144 @@
 package org.example.demo;
 
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.GridPane;
-import javafx.util.Callback;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
+import javafx.geometry.Pos;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.animation.RotateTransition;
+import javafx.scene.transform.Rotate;
+import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.util.converter.NumberStringConverter;
 import org.example.demo.model.Card;
 import org.example.demo.model.DatabaseService;
 import org.example.demo.model.MemoryGame;
 import org.example.demo.model.Player;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.List;
 
 public class HelloController implements Initializable {
     @FXML
     private Label welcomeText;
-    
-    @FXML
-    private GridPane cardGrid;
-    
+
     @FXML
     private ListView<Card> cardListView;
-    
+
     @FXML
     private ListView<Player> playersListView;
-    
+
     @FXML
     private Label currentPlayerLabel;
-    
+
     @FXML
     private Label triesLabel;
-    
+
     @FXML
     private Label matchedPairsLabel;
-    
+
     @FXML
     private TextField playerNameField;
-    
+
+    @FXML
+    private TextField playerScoreField;
+
     @FXML
     private Button addPlayerButton;
-    
+
     @FXML
     private Button newGameButton;
-    
+
+    @FXML
+    private Label timerLabel;
+
+    @FXML
+    private ComboBox<Integer> pairsComboBox;
+
+    @FXML
+    private TextField playerNameEditField;
+
     private MemoryGame game;
     private DatabaseService dbService;
-    
+
     private Timer flipBackTimer;
-    
+    private Timeline timer;
+    private IntegerProperty elapsedTime;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Initialize the game model
         game = new MemoryGame();
-        
-        // Initialize the database service
         dbService = new DatabaseService();
-        
-        // Set up bindings
         setupBindings();
-        
-        // Set up ListView for cards
+        setupTimer();
         setupCardListView();
-        // Attach listeners to card properties for UI refresh
-        attachCardListeners();
-        
-        // Set up ListView for players
+        attachGameListeners();
         setupPlayerListView();
-        
-        // Load players from database
+        // Bidirektionales Binding für Score-Edit-Feld
+        playersListView.getSelectionModel().selectedItemProperty().addListener((obs, oldPlayer, newPlayer) -> {
+            if (oldPlayer != null) {
+                Bindings.unbindBidirectional(playerScoreField.textProperty(), oldPlayer.scoreProperty());
+                Bindings.unbindBidirectional(playerNameEditField.textProperty(), oldPlayer.nameProperty());
+            }
+            if (newPlayer != null) {
+                playerScoreField.setDisable(false);
+                Bindings.bindBidirectional(playerScoreField.textProperty(), newPlayer.scoreProperty(), new NumberStringConverter());
+                playerNameEditField.setDisable(false);
+                Bindings.bindBidirectional(playerNameEditField.textProperty(), newPlayer.nameProperty());
+            } else {
+                playerScoreField.clear();
+                playerScoreField.setDisable(true);
+                playerNameEditField.clear();
+                playerNameEditField.setDisable(true);
+            }
+        });
         loadPlayersFromDatabase();
-        
-        // Add key event handler for keyboard navigation
         addKeyEventHandlers();
+        // initialize pairs selection
+        pairsComboBox.getItems().addAll(2, 4, 6, 8);
+        // KI-Assist: Initialisierung der Paare-Auswahl durch AI vorgeschlagen
+        pairsComboBox.setValue(8);
     }
-    
+
     private void setupBindings() {
-        // Current player binding
         currentPlayerLabel.textProperty().bind(
             Bindings.createStringBinding(() -> {
                 Player player = game.getCurrentPlayer();
                 return player != null ? "Current Player: " + player.getName() : "No player";
             }, game.currentPlayerIndexProperty())
         );
-        
-        // Tries binding
+
         triesLabel.textProperty().bind(
-            Bindings.createStringBinding(() -> 
+            Bindings.createStringBinding(() ->
                 "Tries: " + game.triesProperty().get(),
                 game.triesProperty())
         );
-        
-        // Matched pairs binding
+
         matchedPairsLabel.textProperty().bind(
-            Bindings.createStringBinding(() -> 
+            Bindings.createStringBinding(() ->
                 "Matched Pairs: " + game.matchedPairsProperty().get() + "/" + (game.getCards().size() / 2),
                 game.matchedPairsProperty())
         );
-        
-        // Game over binding
+
         game.gameOverProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 showGameOverDialog();
@@ -111,55 +146,109 @@ public class HelloController implements Initializable {
             }
         });
     }
-    
+
+    private void setupTimer() {        elapsedTime = new SimpleIntegerProperty(0);
+        timerLabel.textProperty().bind(elapsedTime.asString("Time: %ds"));
+        timer = new Timeline(new KeyFrame(Duration.seconds(1), e -> elapsedTime.set(elapsedTime.get() + 1)));
+        timer.setCycleCount(Timeline.INDEFINITE);
+        timer.play();
+    }
+
     private void setupCardListView() {
         cardListView.setItems(game.getCards());
-        cardListView.setCellFactory(lv -> new ListCell<>() {
+        cardListView.setCellFactory(lv -> new ListCell<Card>() {
+            private final StackPane pane = new StackPane();
+            private final ImageView frontImageView = new ImageView();
+            private final ImageView backImageView = new ImageView(
+                new Image(getClass().getResourceAsStream("/images/backside.png"),
+                    80, 80, true, true)
+            );
+
+            {
+                pane.getChildren().addAll(backImageView, frontImageView);
+                pane.setPrefSize(80, 80);
+                pane.setAlignment(Pos.CENTER);
+                frontImageView.setFitWidth(80);
+                frontImageView.setFitHeight(80);
+                backImageView.setFitWidth(80);
+                backImageView.setFitHeight(80);
+                pane.setRotationAxis(Rotate.Y_AXIS);
+                pane.setStyle("-fx-border-color: lightgray; -fx-background-color: white; -fx-border-radius: 5;");
+            }
+
             @Override
             protected void updateItem(Card card, boolean empty) {
                 super.updateItem(card, empty);
                 if (empty || card == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(card.toString());
-                    if (card.isMatched()) {
-                        setStyle("-fx-background-color: lightgreen;");
-                    } else if (card.isFlipped()) {
-                        setStyle("-fx-background-color: lightblue;");
-                    } else {
-                        setStyle("");
-                    }
+                    setGraphic(null);
+                    return;
                 }
-            }
-        });
+                String value = card.getValue().toLowerCase();
+                Image frontImage = new Image(
+                    getClass().getResourceAsStream("/images/" + value + ".png"),
+                    80, 80, true, true  // load scaled image with smoothing
+                );
+                frontImageView.setImage(frontImage);
 
-        // Mouse and key handlers remain unchanged
-        cardListView.setOnMouseClicked(event -> {
-            int index = cardListView.getSelectionModel().getSelectedIndex();
-            if (index >= 0) {
-                handleCardClick(index);
+                boolean showFront = card.isFlipped() || card.isMatched();
+                frontImageView.setVisible(showFront);
+                backImageView.setVisible(!showFront);
+                setGraphic(pane);
+
+                card.flippedProperty().addListener((obs, oldVal, newVal) -> 
+                    performFlipAnimation(pane, frontImageView, backImageView, newVal)
+                );
+                setOnMouseClicked(e -> handleCardClick(getIndex()));
+            }
+
+            private void performFlipAnimation(StackPane pane, ImageView front, ImageView back, boolean flipped) {
+                // KI-Assist: Komplexe Flip-Animation-Logik optimiert durch AI
+                RotateTransition firstHalf = new RotateTransition(Duration.millis(150), pane);
+                firstHalf.setFromAngle(0);
+                firstHalf.setToAngle(90);
+                RotateTransition secondHalf = new RotateTransition(Duration.millis(150), pane);
+                secondHalf.setFromAngle(90);
+                secondHalf.setToAngle(0);
+                firstHalf.setOnFinished(evt -> {
+                    front.setVisible(flipped);
+                    back.setVisible(!flipped);
+                    secondHalf.play();
+                });
+                firstHalf.play();
             }
         });
     }
-    
+
+    private void attachGameListeners() {
+        game.getCards().addListener((javafx.collections.ListChangeListener<Card>) change -> setupCardListView());
+    }
+
     private void setupPlayerListView() {
         playersListView.setItems(game.getPlayers());
+        playersListView.setCellFactory(lv -> new ListCell<Player>() {
+            @Override
+            protected void updateItem(Player player, boolean empty) {
+                super.updateItem(player, empty);
+                if (empty || player == null) {
+                    textProperty().unbind();
+                    setText(null);
+                } else {
+                    // KI-Assist: Bind text to name and score so it updates automatically
+                    textProperty().bind(Bindings.createStringBinding(() ->
+                        player.getName() + " - Score: " + player.getScore(),
+                        player.nameProperty(), player.scoreProperty()));
+                }
+            }
+        });
     }
-    
+
     private void addKeyEventHandlers() {
-        // Add keyboard handler to the card list view
         cardListView.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
-                int selectedIndex = cardListView.getSelectionModel().getSelectedIndex();
-                if (selectedIndex >= 0) {
-                    handleCardClick(selectedIndex);
-                }
                 event.consume();
             }
         });
-        
-        // Add keyboard handler to the player name field
+
         playerNameField.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 addPlayer();
@@ -167,12 +256,12 @@ public class HelloController implements Initializable {
             }
         });
     }
-    
+
     @FXML
     protected void onHelloButtonClick() {
         welcomeText.setText("Welcome to JavaFX Application!");
     }
-    
+
     @FXML
     protected void addPlayer() {
         String name = playerNameField.getText().trim();
@@ -181,87 +270,111 @@ public class HelloController implements Initializable {
             playerNameField.clear();
         }
     }
-    
+
     @FXML
     protected void newGame() {
-        // Cancel any pending flip back timer
         if (flipBackTimer != null) {
             flipBackTimer.cancel();
             flipBackTimer = null;
         }
-        
-        game.initializeCards(8); // 8 pairs = 16 cards
-        attachCardListeners();
-        cardListView.refresh();
+        int pairs = pairsComboBox.getValue() != null ? pairsComboBox.getValue() : 8;
+        game.initializeCards(pairs);
+        setupCardListView();        if (elapsedTime != null) elapsedTime.set(0);
     }
-    
-    private void handleCardClick(int index) {
-        // Kann die Karte aufgedeckt werden?
-        if (game.isWaitingForFlipBack()) {
-            // Warte bis die Karten umgedreht werden
-            return;
+
+    @FXML
+    protected void resetScores() {
+        // Reset scores in database (KI-Assist)
+        dbService.resetAllScores();
+        // Reset scores in current game
+        game.getPlayers().forEach(player -> player.setScore(0));
+    }
+
+    @FXML
+    protected void exitGame() {
+        Platform.exit();
+    }
+
+    @FXML
+    protected void showAbout() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("About");
+        alert.setHeaderText("Memory Game");
+        alert.setContentText("Ein einfaches Memory-Spiel in JavaFX. \nDas Memory-Spiel funktioniert so:\n" +
+            "\n" +
+            "1. **Spiel starten**: Klicke auf \"New Game\", um ein neues Spiel zu beginnen.\n" +
+            "2. **Karten aufdecken**: Klicke auf zwei Karten, um sie aufzudecken.\n" +
+            "3. **Paare finden**: Wenn die Karten übereinstimmen, bleiben sie aufgedeckt. Andernfalls werden sie wieder umgedreht.\n" +
+            "4. **Spielziel**: Finde alle Paare, um das Spiel zu gewinnen.");
+        alert.showAndWait();
+    }
+
+    @FXML
+    protected void removePlayer() {
+        Player selected = playersListView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            // delete from database
+            if (selected.getId() != 0) {
+                dbService.deletePlayer(selected.getId());
+            }
+            // remove from game
+            game.getPlayers().remove(selected);
         }
-        
+    }
+
+    private void handleCardClick(int index) {
+        if (game.isWaitingForFlipBack()) return;
         game.flipCard(index);
-        // Update UI immediately
-        cardListView.refresh();
-        
-        // Wenn zwei Karten aufgedeckt wurden und nicht übereinstimmen,
-        // drehe sie nach einer Verzögerung wieder um
+        setupCardListView();
         if (game.isWaitingForFlipBack()) {
             scheduleFlipBack();
         }
     }
-    
+
     private void scheduleFlipBack() {
-        if (flipBackTimer != null) {
-            flipBackTimer.cancel();
-        }
-        
+        if (flipBackTimer != null) flipBackTimer.cancel();
         flipBackTimer = new Timer();
         flipBackTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 Platform.runLater(() -> {
                     game.flipCardsBack();
-                    cardListView.refresh();
+                    setupCardListView();
                 });
             }
-        }, 1000); // 1 Sekunde Verzögerung
+        }, 1000);
     }
-    
+
     private void showGameOverDialog() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Game Over");
         alert.setHeaderText("Game Over");
-        
-        // Find the winner
+
         Player winner = null;
         int maxScore = -1;
-        
+
         for (Player player : game.getPlayers()) {
             if (player.getScore() > maxScore) {
                 maxScore = player.getScore();
                 winner = player;
             }
         }
-        
+
         String resultMessage;
         if (winner != null) {
             resultMessage = "Winner: " + winner.getName() + " with " + winner.getScore() + " pairs!";
         } else {
             resultMessage = "Game Over!";
         }
-        
+
         alert.setContentText(resultMessage + "\nTotal tries: " + game.triesProperty().get());
-        
+
         alert.showAndWait();
     }
-    
+
     private void loadPlayersFromDatabase() {
         List<Player> players = dbService.loadPlayers();
-        
-        // Add loaded players only if they don't already exist
+
         for (Player player : players) {
             boolean exists = false;
             for (Player existingPlayer : game.getPlayers()) {
@@ -270,46 +383,25 @@ public class HelloController implements Initializable {
                     break;
                 }
             }
-            
+
             if (!exists) {
                 game.addPlayer(player);
             }
         }
     }
-    
+
     private void savePlayersToDatabase() {
         for (Player player : game.getPlayers()) {
             dbService.savePlayer(player);
         }
     }
-    
+
     public void shutdown() {
-        // Clean up resources, save state, etc.
         if (flipBackTimer != null) {
             flipBackTimer.cancel();
         }
-        
+
         savePlayersToDatabase();
         dbService.close();
-    }
-    
-    // Attach listeners to all cards for automatic ListView refresh
-    private void attachCardListeners() {
-        // Clear any existing listeners by recreating UI (cards list is new on newGame)
-        game.getCards().forEach(card -> {
-            card.flippedProperty().addListener((obs, oldVal, newVal) -> cardListView.refresh());
-            card.matchedProperty().addListener((obs, oldVal, newVal) -> cardListView.refresh());
-        });
-        // Listen to list changes to attach listeners to new cards
-        game.getCards().addListener((javafx.collections.ListChangeListener<Card>) change -> {
-            while (change.next()) {
-                if (change.wasAdded()) {
-                    for (Card card : change.getAddedSubList()) {
-                        card.flippedProperty().addListener((obs, oldVal, newVal) -> cardListView.refresh());
-                        card.matchedProperty().addListener((obs, oldVal, newVal) -> cardListView.refresh());
-                    }
-                }
-            }
-        });
     }
 }

@@ -8,7 +8,7 @@ import javafx.beans.property.StringProperty;
 public class Player {
     private final StringProperty name = new SimpleStringProperty();
     private final IntegerProperty score = new SimpleIntegerProperty(0);
-    private int id; // Used for database persistence
+    private int id; 
     
     public Player(String name) {
         this.name.set(name);

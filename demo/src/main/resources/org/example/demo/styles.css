@@ -1,0 +1,47 @@
+/* Application-wide styles */
+.root {
+    -fx-font-family: 'Segoe UI', sans-serif;
+    -fx-base: #f0f0f0;
+}
+
+/* Menu bar styling */
+.menu-bar {
+    -fx-background-color: linear-gradient(to bottom, #4a90e2, #357abd);
+}
+.menu-bar .label {
+    -fx-text-fill: white;
+}
+
+/* Buttons */
+.button {
+    -fx-background-color: linear-gradient(to bottom, #6bb8f6, #4a90e2);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5;
+}
+.button:hover {
+    -fx-background-color: linear-gradient(to bottom, #4a90e2, #357abd);
+}
+
+/* ListView cards */
+.list-cell {
+    -fx-border-color: #ccc;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-padding: 8;
+}
+.list-cell:selected {
+    -fx-background-color: #add8e6;
+    -fx-text-fill: black;
+}
+
+/* Labels */
+.label {
+    -fx-text-fill: #333;
+}
+
+/* Timer label */
+.timer-label {
+    -fx-font-size: 14;
+    -fx-text-fill: #555;
+}
